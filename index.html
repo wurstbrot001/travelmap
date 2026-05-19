@@ -192,8 +192,9 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // Mappe ISO-Codes sauber auf Ländernamen, um Abweichungen in Karten zu korrigieren
+        // Erweiterte globale Länderliste (über 70 Einträge, alphabetisch vorsortiert)
         const countriesList = [
+            // Europa
             {code: "DEU", name: "Deutschland", alt: ["Germany", "DE"]},
             {code: "AUT", name: "Österreich", alt: ["Austria", "AT"]},
             {code: "CHE", name: "Schweiz", alt: ["Switzerland", "CH"]},
@@ -205,23 +206,77 @@
             {code: "HRV", name: "Kroatien", alt: ["Croatia", "HR"]},
             {code: "NLD", name: "Niederlande", alt: ["Netherlands", "NL"]},
             {code: "BEL", name: "Belgien", alt: ["Belgium", "BE"]},
-            {code: "GBR", name: "Großbritannien", alt: ["United Kingdom", "UK", "GB"]},
+            {code: "GBR", name: "Großbritannien", alt: ["United Kingdom", "Great Britain", "UK", "GB"]},
+            {code: "IRL", name: "Irland", alt: ["Ireland", "IE"]},
             {code: "DNK", name: "Dänemark", alt: ["Denmark", "DK"]},
             {code: "SWE", name: "Schweden", alt: ["Sweden", "SE"]},
             {code: "NOR", name: "Norwegen", alt: ["Norway", "NO"]},
             {code: "FIN", name: "Finnland", alt: ["Finland", "FI"]},
             {code: "ISL", name: "Island", alt: ["Iceland", "IS"]},
+            {code: "POL", name: "Polen", alt: ["Poland", "PL"]},
+            {code: "CZE", name: "Tschechien", alt: ["Czech Republic", "Czechia", "CZ"]},
+            {code: "HUN", name: "Ungarn", alt: ["Hungary", "HU"]},
+            {code: "ROU", name: "Rumänien", alt: ["Romania", "RO"]},
+            {code: "BGR", name: "Bulgarien", alt: ["Bulgaria", "BG"]},
+            {code: "SVN", name: "Slowenien", alt: ["Slovenia", "SI"]},
+            {code: "SVK", name: "Slowakei", alt: ["Slovakia", "SK"]},
             {code: "TUR", name: "Türkei", alt: ["Turkey", "TR"]},
-            {code: "EGY", name: "Ägypten", alt: ["Egypt", "EG"]},
+            {code: "CYP", name: "Zypern", alt: ["Cyprus", "CY"]},
+            {code: "MLT", name: "Malta", alt: ["MT"]},
+
+            // Nord- & Mittelamerika
             {code: "USA", name: "USA", alt: ["United States of America", "United States", "US"]},
             {code: "CAN", name: "Kanada", alt: ["Canada", "CA"]},
             {code: "MEX", name: "Mexiko", alt: ["Mexico", "MX"]},
+            {code: "CRI", name: "Costa Rica", alt: ["CR"]},
+            {code: "PAN", name: "Panama", alt: ["PA"]},
+            {code: "DOM", name: "Dom. Republik", alt: ["Dominican Republic", "DO"]},
+            {code: "CUB", name: "Kuba", alt: ["Cuba", "CU"]},
+            {code: "JAM", name: "Jamaika", alt: ["Jamaica", "JM"]},
+            {code: "BHS", name: "Bahamas", alt: ["BS"]},
+
+            // Südamerika
+            {code: "BRA", name: "Brasilien", alt: ["Brazil", "BR"]},
+            {code: "ARG", name: "Argentinien", alt: ["Argentina", "AR"]},
+            {code: "CHL", name: "Chile", alt: ["CL"]},
+            {code: "PER", name: "Peru", alt: ["PE"]},
+            {code: "COL", name: "Kolumbien", alt: ["Colombia", "CO"]},
+            {code: "ECU", name: "Ecuador", alt: ["EC"]},
+
+            // Asien & Naher Osten
             {code: "THA", name: "Thailand", alt: ["TH"]},
             {code: "SGP", name: "Singapur", alt: ["Singapore", "SG"]},
             {code: "JPN", name: "Japan", alt: ["JP"]},
             {code: "CHN", name: "China", alt: ["CN"]},
+            {code: "IND", name: "Indien", alt: ["India", "IN"]},
+            {code: "IDN", name: "Indonesien", alt: ["Indonesia", "ID"]},
+            {code: "VNM", name: "Vietnam", alt: ["Viet Nam", "VN"]},
+            {code: "MYS", name: "Malaysia", alt: ["MY"]},
+            {code: "PHL", name: "Philippinen", alt: ["Philippines", "PH"]},
+            {code: "LKA", name: "Sri Lanka", alt: ["LK"]},
+            {code: "MDV", name: "Malediven", alt: ["Maldives", "MV"]},
+            {code: "ARE", name: "Verg. Arab. Emirate (Dubai)", alt: ["United Arab Emirates", "UAE", "AE"]},
+            {code: "ISR", name: "Israel", alt: ["IL"]},
+            {code: "JOR", name: "Jordanien", alt: ["Jordan", "JO"]},
+            {code: "OMN", name: "Oman", alt: ["OM"]},
+            {code: "KOR", name: "Südkorea", alt: ["South Korea", "Korea", "KR"]},
+
+            // Afrika
+            {code: "EGY", name: "Ägypten", alt: ["Egypt", "EG"]},
+            {code: "MAR", name: "Marokko", alt: ["Morocco", "MA"]},
+            {code: "TUN", name: "Tunesien", alt: ["Tunisia", "TN"]},
+            {code: "ZAF", name: "Südafrika", alt: ["South Africa", "ZA"]},
+            {code: "KEN", name: "Kenia", alt: ["Kenya", "KE"]},
+            {code: "NAM", name: "Namibia", alt: ["NA"]},
+            {code: "MUS", name: "Mauritius", alt: ["MU"]},
+            {code: "SYC", name: "Seychellen", alt: ["Seychelles", "SC"]},
+            {code: "TZA", name: "Tansania (Sansibar)", alt: ["Tanzania", "TZ"]},
+
+            // Ozeanien
             {code: "AUS", name: "Australien", alt: ["Australia", "AU"]},
-            {code: "NZL", name: "Neuseeland", alt: ["New Zealand", "NZ"]}
+            {code: "NZL", name: "Neuseeland", alt: ["New Zealand", "NZ"]},
+            {code: "FJI", name: "Fidschi", alt: ["Fiji", "FJ"]},
+            {code: "PYF", name: "Französisch-Polynesien (Tahiti)", alt: ["French Polynesia", "PF"]}
         ].sort((a, b) => a.name.localeCompare(b.name));
 
         // Dropdown initialisieren
@@ -233,7 +288,7 @@
             select.appendChild(option);
         });
 
-        // Startdaten (Nutzt LocalStorage)
+        // Startdaten aus LocalStorage laden
         const defaultData = {
             family: ["DEU", "FRA", "ITA", "ESP"],
             noKids: ["USA", "THA", "SGP"],
@@ -252,26 +307,25 @@
 
         let geoJsonLayer;
 
-        // Intelligenter Farbabgleich (prüft Code und alle bekannten Alternativnamen)
+        // Farbabgleich gegen Config-Liste
         function getCountryColor(feature) {
             const props = feature.properties;
             const id = (props.ISO_A3 || props.id || props.name || "").toUpperCase();
             const nameEng = (props.name || props.NAME || "").toLowerCase();
 
-            // Finde das passende Land in unserer Config-Liste
             const foundCountry = countriesList.find(c => {
                 return c.code === id || 
                        id.includes(c.code) || 
                        c.alt.some(a => id === a.toUpperCase() || nameEng === a.toLowerCase());
             });
 
-            if (!foundCountry) return "#bdc3c7"; // Grau, falls nicht in der Liste oben
+            if (!foundCountry) return "#bdc3c7";
 
             const code = foundCountry.code;
-            if (travelData.family.includes(code)) return "#2ecc71"; // Grün
-            if (travelData.noKids.includes(code)) return "#3498db"; // Blau
-            if (travelData.bucket.includes(code)) return "#f1c40f"; // Gelb
-            return "#bdc3c7"; // Standard Grau
+            if (travelData.family.includes(code)) return "#2ecc71";
+            if (travelData.noKids.includes(code)) return "#3498db";
+            if (travelData.bucket.includes(code)) return "#f1c40f";
+            return "#bdc3c7";
         }
 
         function styleFeature(feature) {
@@ -297,19 +351,16 @@
         function setCountryStatus(category) {
             const selectedCode = document.getElementById('countrySelect').value;
 
-            // Alten Status löschen
             travelData.family = travelData.family.filter(c => c !== selectedCode);
             travelData.noKids = travelData.noKids.filter(c => c !== selectedCode);
             travelData.bucket = travelData.bucket.filter(c => c !== selectedCode);
 
-            // Neu zuordnen
             if (category !== 'open') {
                 travelData[category].push(selectedCode);
             }
 
             localStorage.setItem('travelData', JSON.stringify(travelData));
 
-            // Karte neu rendern
             if (geoJsonLayer) {
                 geoJsonLayer.setStyle(styleFeature);
             }
@@ -317,7 +368,7 @@
             toggleEditor();
         }
 
-        // Nutzen ein stabiles, minimalistisches GeoJSON
+        // Stabile GeoJSON Quelle laden
         const geoJsonUrl = 'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json';
 
         fetch(geoJsonUrl)
@@ -328,7 +379,7 @@
                     onEachFeature: onEachFeature
                 }).addTo(map);
             })
-            .catch(err => console.error("Fehler:", err));
+            .catch(err => console.error("Fehler beim Laden:", err));
     </script>
 </body>
 </html>
