@@ -82,7 +82,6 @@
         .bg-bucket  { background-color: #f1c40f; border: 1px solid #f39c12; }
         .bg-default { background-color: #bdc3c7; border: 1px solid #95a5a6; }
 
-        /* Mobil-optimierter Editor-Bereich */
         .editor-box {
             display: none;
             background: #f5f5f7;
@@ -108,7 +107,6 @@
             margin-bottom: 4px;
         }
 
-        /* Nativ aussehendes großes Dropdown für iOS Touch */
         .input-group select {
             width: 100%;
             padding: 10px;
@@ -185,7 +183,7 @@
                 <button class="action-btn btn-couple" onclick="setCountryStatus('noKids')">Ohne Kinder</button>
                 <button class="action-btn btn-bucket" onclick="setCountryStatus('bucket')">Bucketlist</button>
             </div>
-            <button class="reset-btn" onclick="setCountryStatus('open')">Auf "Offen (Grau)" zurücksetzen</button>
+            <button class="reset-btn" onclick="setCountryStatus('open')">Auf "Offen" zurücksetzen</button>
         </div>
     </header>
 
@@ -194,24 +192,39 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // Eine Liste der gängigsten Reiseländer für das Dropdown-Menü
+        // Mappe ISO-Codes sauber auf Ländernamen, um Abweichungen in Karten zu korrigieren
         const countriesList = [
-            {code: "DEU", name: "Deutschland"}, {code: "AUT", name: "Österreich"}, {code: "CHE", name: "Schweiz"},
-            {code: "FRA", name: "Frankreich"}, {code: "ITA", name: "Italien"}, {code: "ESP", name: "Spanien"},
-            {code: "PRT", name: "Portugal"}, {code: "GRC", name: "Griechenland"}, {code: "HRV", name: "Kroatien"},
-            {code: "NLD", name: "Niederlande"}, {code: "BEL", name: "Belgien"}, {code: "GBR", name: "Großbritannien"},
-            {code: "DNK", name: "Dänemark"}, {code: "SWE", name: "Schweden"}, {code: "NOR", name: "Norwegen"},
-            {code: "FIN", name: "Finnland"}, {code: "ISL", name: "Island"}, {code: "TUR", name: "Türkei"},
-            {code: "EGY", name: "Ägypten"}, {code: "TUN", name: "Tunesien"}, {code: "ZAF", name: "Südafrika"},
-            {code: "USA", name: "USA"}, {code: "CAN", name: "Kanada"}, {code: "MEX", name: "Mexiko"},
-            {code: "DOM", name: "Dom. Republik"}, {code: "CUB", name: "Kuba"}, {code: "BRA", name: "Brasilien"},
-            {code: "ARG", name: "Argentinien"}, {code: "THA", name: "Thailand"}, {code: "SGP", name: "Singapur"},
-            {code: "JPN", name: "Japan"}, {code: "CHN", name: "China"}, {code: "IND", name: "Indien"},
-            {code: "IDN", name: "Indonesien"}, {code: "VNM", name: "Vietnam"}, {code: "MDV", name: "Malediven"},
-            {code: "AUS", name: "Australien"}, {code: "NZL", name: "Neuseeland"}
-        ].sort((a, b) => a.name.localeCompare(b.name)); // Alphabetisch sortieren
+            {code: "DEU", name: "Deutschland", alt: ["Germany", "DE"]},
+            {code: "AUT", name: "Österreich", alt: ["Austria", "AT"]},
+            {code: "CHE", name: "Schweiz", alt: ["Switzerland", "CH"]},
+            {code: "FRA", name: "Frankreich", alt: ["France", "FR"]},
+            {code: "ITA", name: "Italien", alt: ["Italy", "IT"]},
+            {code: "ESP", name: "Spanien", alt: ["Spain", "ES"]},
+            {code: "PRT", name: "Portugal", alt: ["PT"]},
+            {code: "GRC", name: "Griechenland", alt: ["Greece", "GR"]},
+            {code: "HRV", name: "Kroatien", alt: ["Croatia", "HR"]},
+            {code: "NLD", name: "Niederlande", alt: ["Netherlands", "NL"]},
+            {code: "BEL", name: "Belgien", alt: ["Belgium", "BE"]},
+            {code: "GBR", name: "Großbritannien", alt: ["United Kingdom", "UK", "GB"]},
+            {code: "DNK", name: "Dänemark", alt: ["Denmark", "DK"]},
+            {code: "SWE", name: "Schweden", alt: ["Sweden", "SE"]},
+            {code: "NOR", name: "Norwegen", alt: ["Norway", "NO"]},
+            {code: "FIN", name: "Finnland", alt: ["Finland", "FI"]},
+            {code: "ISL", name: "Island", alt: ["Iceland", "IS"]},
+            {code: "TUR", name: "Türkei", alt: ["Turkey", "TR"]},
+            {code: "EGY", name: "Ägypten", alt: ["Egypt", "EG"]},
+            {code: "USA", name: "USA", alt: ["United States of America", "United States", "US"]},
+            {code: "CAN", name: "Kanada", alt: ["Canada", "CA"]},
+            {code: "MEX", name: "Mexiko", alt: ["Mexico", "MX"]},
+            {code: "THA", name: "Thailand", alt: ["TH"]},
+            {code: "SGP", name: "Singapur", alt: ["Singapore", "SG"]},
+            {code: "JPN", name: "Japan", alt: ["JP"]},
+            {code: "CHN", name: "China", alt: ["CN"]},
+            {code: "AUS", name: "Australien", alt: ["Australia", "AU"]},
+            {code: "NZL", name: "Neuseeland", alt: ["New Zealand", "NZ"]}
+        ].sort((a, b) => a.name.localeCompare(b.name));
 
-        // Dropdown befüllen
+        // Dropdown initialisieren
         const select = document.getElementById('countrySelect');
         countriesList.forEach(c => {
             let option = document.createElement('option');
@@ -220,7 +233,7 @@
             select.appendChild(option);
         });
 
-        // Startdaten definieren
+        // Startdaten (Nutzt LocalStorage)
         const defaultData = {
             family: ["DEU", "FRA", "ITA", "ESP"],
             noKids: ["USA", "THA", "SGP"],
@@ -229,67 +242,74 @@
 
         let travelData = JSON.parse(localStorage.getItem('travelData')) || defaultData;
 
-        // Karte initialisieren
+        // Karte aufsetzen
         const map = L.map('map', {
             zoomSnap: 0.5,
             minZoom: 1.2,
             maxZoom: 5,
             attributionControl: false
-        }).setView([25, 10], 1.5);
+        }).setView([20, 10], 1.5);
 
         let geoJsonLayer;
 
-        function getCountryColor(isoCode) {
-            if (!isoCode) return "#bdc3c7";
-            const cleanCode = isoCode.toUpperCase();
-            if (travelData.family.includes(cleanCode)) return "#2ecc71";
-            if (travelData.noKids.includes(cleanCode)) return "#3498db";
-            if (travelData.bucket.includes(cleanCode)) return "#f1c40f";
-            return "#bdc3c7";
+        // Intelligenter Farbabgleich (prüft Code und alle bekannten Alternativnamen)
+        function getCountryColor(feature) {
+            const props = feature.properties;
+            const id = (props.ISO_A3 || props.id || props.name || "").toUpperCase();
+            const nameEng = (props.name || props.NAME || "").toLowerCase();
+
+            // Finde das passende Land in unserer Config-Liste
+            const foundCountry = countriesList.find(c => {
+                return c.code === id || 
+                       id.includes(c.code) || 
+                       c.alt.some(a => id === a.toUpperCase() || nameEng === a.toLowerCase());
+            });
+
+            if (!foundCountry) return "#bdc3c7"; // Grau, falls nicht in der Liste oben
+
+            const code = foundCountry.code;
+            if (travelData.family.includes(code)) return "#2ecc71"; // Grün
+            if (travelData.noKids.includes(code)) return "#3498db"; // Blau
+            if (travelData.bucket.includes(code)) return "#f1c40f"; // Gelb
+            return "#bdc3c7"; // Standard Grau
         }
 
         function styleFeature(feature) {
-            // Robustes Auslesen des ISO-Codes (fängt alle gängigen GeoJSON-Formate ab)
-            const props = feature.properties;
-            const isoCode = props.ISO_A3 || props.ADM0_A3 || props.iso_a3 || props.iso3 || props.id;
-            
             return {
-                fillColor: getCountryColor(isoCode),
+                fillColor: getCountryColor(feature),
                 weight: 1,
                 opacity: 1,
                 color: '#ffffff',
-                fillOpacity: 0.7
+                fillOpacity: 0.75
             };
         }
 
         function onEachFeature(feature, layer) {
             const props = feature.properties;
-            const countryName = props.NAME_DE || props.name_de || props.NAME || props.name || "Unbekanntes Land";
-            layer.bindPopup(countryName);
+            const name = props.name || props.NAME || "Unbekannt";
+            layer.bindPopup(`<b>${name}</b>`);
         }
 
         function toggleEditor() {
             document.getElementById('editorBox').classList.toggle('active');
         }
 
-        // Status ändern via Dropdown
         function setCountryStatus(category) {
             const selectedCode = document.getElementById('countrySelect').value;
 
-            // Zuerst alten Status überall entfernen
+            // Alten Status löschen
             travelData.family = travelData.family.filter(c => c !== selectedCode);
             travelData.noKids = travelData.noKids.filter(c => c !== selectedCode);
             travelData.bucket = travelData.bucket.filter(c => c !== selectedCode);
 
-            // In neue Kategorie einsortieren (außer bei 'open')
+            // Neu zuordnen
             if (category !== 'open') {
                 travelData[category].push(selectedCode);
             }
 
-            // Auf dem iPhone speichern
             localStorage.setItem('travelData', JSON.stringify(travelData));
 
-            // Karte live neu färben
+            // Karte neu rendern
             if (geoJsonLayer) {
                 geoJsonLayer.setStyle(styleFeature);
             }
@@ -297,21 +317,18 @@
             toggleEditor();
         }
 
-        // Absolut stabile und CORS-geprüfte GeoJSON Quelle laden
+        // Nutzen ein stabiles, minimalistisches GeoJSON
         const geoJsonUrl = 'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json';
 
         fetch(geoJsonUrl)
-            .then(res => {
-                if (!res.ok) throw new Error();
-                return res.json();
-            })
+            .then(res => res.json())
             .then(geoData => {
                 geoJsonLayer = L.geoJSON(geoData, {
                     style: styleFeature,
                     onEachFeature: onEachFeature
                 }).addTo(map);
             })
-            .catch(err => console.error("Kartenfehler:", err));
+            .catch(err => console.error("Fehler:", err));
     </script>
 </body>
 </html>
