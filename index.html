@@ -5,11 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Familien Reise-Dashboard</title>
     
-    <!-- Leaflet CSS für die Karte -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        /* Mobil-natives Reset & Layout */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -20,157 +18,275 @@
         body, html {
             width: 100%;
             height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #f5f5f7;
             overflow: hidden;
             display: flex;
             flex-direction: column;
         }
 
-        /* Header Styling */
         header {
             background: #ffffff;
             padding: 12px 16px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             z-index: 1000;
         }
 
-        header h1 {
-            font-size: 1.2rem;
-            color: #1d1d1f;
-            font-weight: 600;
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 8px;
         }
 
-        /* Legende für mobile Devices optimiert */
+        header h1 {
+            font-size: 1.15rem;
+            color: #1d1d1f;
+            font-weight: 600;
+        }
+
+        /* Button zum Ein-/Ausblenden der Eingabefelder */
+        .toggle-btn {
+            background: #0071e3;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
         .legend-container {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
+            gap: 6px;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #515154;
         }
 
         .color-badge {
-            width: 14px;
-            height: 14px;
-            border-radius: 4px;
-            margin-right: 8px;
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 6px;
             flex-shrink: 0;
         }
 
-        /* Farben laut Vorgabe */
         .bg-family  { background-color: #2ecc71; border: 1px solid #27ae60; }
         .bg-couple  { background-color: #3498db; border: 1px solid #2980b9; }
         .bg-bucket  { background-color: #f1c40f; border: 1px solid #f39c12; }
         .bg-default { background-color: #bdc3c7; border: 1px solid #95a5a6; }
 
-        /* Karten-Container füllt den Rest des Bildschirms */
+        /* Eingabebereich (standardmäßig ausgemustert/ausgeblendet für saubere Sicht) */
+        .editor-box {
+            display: none;
+            background: #f5f5f7;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid #d2d2d7;
+        }
+
+        .editor-box.active {
+            display: block;
+        }
+
+        .input-group {
+            margin-bottom: 8px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 2px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 6px;
+            font-size: 0.85rem;
+            border: 1px solid #d2d2d7;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .save-btn {
+            width: 100%;
+            background: #34c759;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
         #map {
             flex-grow: 1;
             width: 100%;
             height: 100%;
+            background: #cbdbe3; /* Ozean-Farbe während des Ladens */
         }
 
-        /* Custom Popup Styling für Mobile Touch */
         .leaflet-popup-content {
-            font-size: 0.95rem;
-            font-weight: bold;
-            margin: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin: 8px;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>🌍 Reise-Dashboard</h1>
+        <div class="header-top">
+            <h1>🌍 Reise-Dashboard</h1>
+            <button class="toggle-btn" onclick="toggleEditor()">Bearbeiten</button>
+        </div>
+        
         <div class="legend-container">
-            <div class="legend-item">
-                <div class="color-badge bg-family"></div> Als Familie (Grün)
+            <div class="legend-item"><div class="color-badge bg-family"></div>Als Familie</div>
+            <div class="legend-item"><div class="color-badge bg-couple"></div>Ohne Kinder</div>
+            <div class="legend-item"><div class="color-badge bg-bucket"></div>Bucketlist</div>
+            <div class="legend-item"><div class="color-badge bg-default"></div>Offen (Grau)</div>
+        </div>
+
+        <div id="editorBox" class="editor-box">
+            <div class="input-group">
+                <label>Als Familie (ISO-Codes kommagetrennt, z.B. DEU, FRA):</label>
+                <input type="text" id="inputFamily">
             </div>
-            <div class="legend-item">
-                <div class="color-badge bg-couple"></div> Ohne Kinder (Blau)
+            <div class="input-group">
+                <label>Ohne Kinder (z.B. USA, THA):</label>
+                <input type="text" id="inputNoKids">
             </div>
-            <div class="legend-item">
-                <div class="color-badge bg-bucket"></div> Bucketlist (Gelb)
+            <div class="input-group">
+                <label>Bucketlist (z.B. JPN, CAN):</label>
+                <input type="text" id="inputBucket">
             </div>
-            <div class="legend-item">
-                <div class="color-badge bg-default"></div> Offen (Grau)
-            </div>
+            <button class="save-btn" onclick="saveData()">Karte aktualisieren</button>
         </div>
     </header>
 
     <div id="map"></div>
 
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // --- DATEN-KONFIGURATION ---
-        // Trage hier die ISO-A3 Codes der Länder ein (3-stellige Großbuchstaben)
-        const travelData = {
-            // Als Familie bereist (Grün)
-            family: ["DEU", "FRA", "ITA", "ESP"], 
-            
-            // Ohne Kinder bereist (Blau)
-            noKids: ["USA", "THA", "SGP"], 
-            
-            // Bucketlist (Gelb)
-            bucket: ["JPN", "CAN", "ISL", "NZL"] 
+        // Standard-Länderdaten falls noch nichts im Speicher des iPhones liegt
+        const defaultData = {
+            family: ["DEU", "FRA", "ITA", "ESP"],
+            noKids: ["USA", "THA", "SGP"],
+            bucket: ["JPN", "CAN", "ISL", "NZL"]
         };
 
-        // --- MAP INITIALISIERUNG ---
-        // Optimiert für Mobile: Start-Zoomstufe 2, zentriert, minimale Zoomstufe 1
+        // Lade Daten aus dem Speicher (LocalStorage) oder nutze Standardwerte
+        let travelData = JSON.parse(localStorage.getItem('travelData')) || defaultData;
+
+        // Eingabefelder beim Start befüllen
+        document.getElementById('inputFamily').value = travelData.family.join(', ');
+        document.getElementById('inputNoKids').value = travelData.noKids.join(', ');
+        document.getElementById('inputBucket').value = travelData.bucket.join(', ');
+
+        // Karte initialisieren
         const map = L.map('map', {
             zoomSnap: 0.5,
-            minZoom: 1.5,
-            maxZoom: 6,
+            minZoom: 1.2,
+            maxZoom: 5,
             attributionControl: false
-        }).setView([20, 0], 2);
+        }).setView([15, 5], 1.5);
 
-        // Farb-Zuordnung basierend auf Länder-Status
+        let geoJsonLayer;
+
         function getCountryColor(isoCode) {
-            if (travelData.family.includes(isoCode)) return "#2ecc71"; // Grün
-            if (travelData.noKids.includes(isoCode)) return "#3498db"; // Blau
-            if (travelData.bucket.includes(isoCode)) return "#f1c40f"; // Gelb
-            return "#bdc3c7"; // Standard Grau
+            if (travelData.family.includes(isoCode)) return "#2ecc71";
+            if (travelData.noKids.includes(isoCode)) return "#3498db";
+            if (travelData.bucket.includes(isoCode)) return "#f1c40f";
+            return "#bdc3c7";
         }
 
-        // Standard-Style für die Länder-Polygone
         function styleFeature(feature) {
-            const isoCode = feature.properties.ISO_A3;
+            // Manche GeoJSONs nutzen ISO_A3, manche BRK_A3. Wir prüfen beides.
+            const isoCode = feature.properties.ISO_A3 || feature.properties.BRK_A3 || feature.properties.iso_a3;
             return {
                 fillColor: getCountryColor(isoCode),
                 weight: 1,
                 opacity: 1,
-                color: '#ffffff', // Grenzen in Weiß für sauberen Look
+                color: '#ffffff',
                 fillOpacity: 0.75
             };
         }
 
-        // Interaktion: Popups bei Touch/Klick auf mobilen Geräten
         function onEachFeature(feature, layer) {
-            if (feature.properties && feature.properties.NAME_DE) {
-                layer.bindPopup(feature.properties.NAME_DE);
+            // Fallback für Ländernamen (Deutsch oder Englisch)
+            const countryName = feature.properties.NAME_DE || feature.properties.name_de || feature.properties.NAME || feature.properties.name;
+            if (countryName) {
+                layer.bindPopup(countryName);
             }
         }
 
-        // --- LADEN DER WELTKARTE (GeoJSON) ---
-        // Nutzung einer performanten, leichtgewichtigen GeoJSON-Quelle mit deutschen Ländernamen
-        fetch('https://raw.githubusercontent.com/stefanw/geo-countries/master/data/countries.geojson')
-            .then(response => response.json())
-            .then(geoData => {
-                L.geoJSON(geoData, {
-                    style: styleFeature,
-                    onEachFeature: onEachFeature
-                }).addTo(map);
-            })
-            .catch(error => console.error("Fehler beim Laden der Kartendaten:", error));
+        // Editor ein- und ausblenden
+        function toggleEditor() {
+            const box = document.getElementById('editorBox');
+            box.classList.toggle('active');
+        }
+
+        // Daten aus den Feldern auslesen, säubern, speichern und Karte neu zeichnen
+        function saveData() {
+            function parseInput(id) {
+                return document.getElementById(id).value
+                    .toUpperCase()
+                    .split(',')
+                    .map(item => item.trim())
+                    .filter(item => item.length === 3); // Nur gültige 3-stellige Codes
+            }
+
+            travelData.family = parseInput('inputFamily');
+            travelData.noKids = parseInput('inputNoKids');
+            travelData.bucket = parseInput('inputBucket');
+
+            // permanent auf dem iPhone sichern
+            localStorage.setItem('travelData', JSON.stringify(travelData));
+
+            // Karte live aktualisieren
+            if (geoJsonLayer) {
+                geoJsonLayer.setStyle(styleFeature);
+            }
+            
+            toggleEditor(); // Box wieder einklappen
+        }
+
+        // Laden der Weltkarte mit Ausfallsicherheit (CORS/HTTPS-Safe CDN URL)
+        const primaryUrl = 'https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson';
+        const fallbackUrl = 'https://r2.shared.town/countries.geojson'; // Sekundärer Spiegel falls GitHub zickt
+
+        function loadMap(url) {
+            fetch(url)
+                .then(res => {
+                    if (!res.ok) throw new Error('Netzwerk-Fehler beim Laden der Karte');
+                    return res.json();
+                })
+                .then(geoData => {
+                    geoJsonLayer = L.geoJSON(geoData, {
+                        style: styleFeature,
+                        onEachFeature: onEachFeature
+                    }).addTo(map);
+                })
+                .catch(err => {
+                    console.warn("Versuche Fallback-URL wegen:", err.message);
+                    if (url !== fallbackUrl) loadMap(fallbackUrl);
+                });
+        }
+
+        // Starten
+        loadMap(primaryUrl);
     </script>
 </body>
 </html>
