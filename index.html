@@ -107,7 +107,7 @@
             margin-bottom: 4px;
         }
 
-        .input-group select {
+        .input-group select, .input-group input {
             width: 100%;
             padding: 10px;
             font-size: 1rem;
@@ -127,9 +127,9 @@
         .action-btn {
             color: white;
             border: none;
-            padding: 10px 4px;
+            padding: 12px 4px;
             border-radius: 6px;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
         }
@@ -175,8 +175,11 @@
         <div id="editorBox" class="editor-box">
             <div class="input-group">
                 <label for="countrySelect">Land auswählen:</label>
-                <select id="countrySelect">
-                    </select>
+                <select id="countrySelect"></select>
+            </div>
+            <div class="input-group">
+                <label for="yearInput">Jahr (optional, z.B. 2026):</label>
+                <input type="number" id="yearInput" placeholder="Jahr eintragen" min="1990" max="2050">
             </div>
             <div class="btn-grid">
                 <button class="action-btn btn-family" onclick="setCountryStatus('family')">Familie</button>
@@ -192,94 +195,12 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // Erweiterte globale Länderliste (über 70 Einträge, alphabetisch vorsortiert)
+        // Definition aller Länder der Erde inklusive Koordinaten für Kleinstaaten (z.B. Singapur)
         const countriesList = [
-            // Europa
-            {code: "DEU", name: "Deutschland", alt: ["Germany", "DE"]},
-            {code: "AUT", name: "Österreich", alt: ["Austria", "AT"]},
-            {code: "CHE", name: "Schweiz", alt: ["Switzerland", "CH"]},
-            {code: "FRA", name: "Frankreich", alt: ["France", "FR"]},
-            {code: "ITA", name: "Italien", alt: ["Italy", "IT"]},
-            {code: "ESP", name: "Spanien", alt: ["Spain", "ES"]},
-            {code: "PRT", name: "Portugal", alt: ["PT"]},
-            {code: "GRC", name: "Griechenland", alt: ["Greece", "GR"]},
-            {code: "HRV", name: "Kroatien", alt: ["Croatia", "HR"]},
-            {code: "NLD", name: "Niederlande", alt: ["Netherlands", "NL"]},
-            {code: "BEL", name: "Belgien", alt: ["Belgium", "BE"]},
-            {code: "GBR", name: "Großbritannien", alt: ["United Kingdom", "Great Britain", "UK", "GB"]},
-            {code: "IRL", name: "Irland", alt: ["Ireland", "IE"]},
-            {code: "DNK", name: "Dänemark", alt: ["Denmark", "DK"]},
-            {code: "SWE", name: "Schweden", alt: ["Sweden", "SE"]},
-            {code: "NOR", name: "Norwegen", alt: ["Norway", "NO"]},
-            {code: "FIN", name: "Finnland", alt: ["Finland", "FI"]},
-            {code: "ISL", name: "Island", alt: ["Iceland", "IS"]},
-            {code: "POL", name: "Polen", alt: ["Poland", "PL"]},
-            {code: "CZE", name: "Tschechien", alt: ["Czech Republic", "Czechia", "CZ"]},
-            {code: "HUN", name: "Ungarn", alt: ["Hungary", "HU"]},
-            {code: "ROU", name: "Rumänien", alt: ["Romania", "RO"]},
-            {code: "BGR", name: "Bulgarien", alt: ["Bulgaria", "BG"]},
-            {code: "SVN", name: "Slowenien", alt: ["Slovenia", "SI"]},
-            {code: "SVK", name: "Slowakei", alt: ["Slovakia", "SK"]},
-            {code: "TUR", name: "Türkei", alt: ["Turkey", "TR"]},
-            {code: "CYP", name: "Zypern", alt: ["Cyprus", "CY"]},
-            {code: "MLT", name: "Malta", alt: ["MT"]},
-
-            // Nord- & Mittelamerika
-            {code: "USA", name: "USA", alt: ["United States of America", "United States", "US"]},
-            {code: "CAN", name: "Kanada", alt: ["Canada", "CA"]},
-            {code: "MEX", name: "Mexiko", alt: ["Mexico", "MX"]},
-            {code: "CRI", name: "Costa Rica", alt: ["CR"]},
-            {code: "PAN", name: "Panama", alt: ["PA"]},
-            {code: "DOM", name: "Dom. Republik", alt: ["Dominican Republic", "DO"]},
-            {code: "CUB", name: "Kuba", alt: ["Cuba", "CU"]},
-            {code: "JAM", name: "Jamaika", alt: ["Jamaica", "JM"]},
-            {code: "BHS", name: "Bahamas", alt: ["BS"]},
-
-            // Südamerika
-            {code: "BRA", name: "Brasilien", alt: ["Brazil", "BR"]},
-            {code: "ARG", name: "Argentinien", alt: ["Argentina", "AR"]},
-            {code: "CHL", name: "Chile", alt: ["CL"]},
-            {code: "PER", name: "Peru", alt: ["PE"]},
-            {code: "COL", name: "Kolumbien", alt: ["Colombia", "CO"]},
-            {code: "ECU", name: "Ecuador", alt: ["EC"]},
-
-            // Asien & Naher Osten
-            {code: "THA", name: "Thailand", alt: ["TH"]},
-            {code: "SGP", name: "Singapur", alt: ["Singapore", "SG"]},
-            {code: "JPN", name: "Japan", alt: ["JP"]},
-            {code: "CHN", name: "China", alt: ["CN"]},
-            {code: "IND", name: "Indien", alt: ["India", "IN"]},
-            {code: "IDN", name: "Indonesien", alt: ["Indonesia", "ID"]},
-            {code: "VNM", name: "Vietnam", alt: ["Viet Nam", "VN"]},
-            {code: "MYS", name: "Malaysia", alt: ["MY"]},
-            {code: "PHL", name: "Philippinen", alt: ["Philippines", "PH"]},
-            {code: "LKA", name: "Sri Lanka", alt: ["LK"]},
-            {code: "MDV", name: "Malediven", alt: ["Maldives", "MV"]},
-            {code: "ARE", name: "Verg. Arab. Emirate (Dubai)", alt: ["United Arab Emirates", "UAE", "AE"]},
-            {code: "ISR", name: "Israel", alt: ["IL"]},
-            {code: "JOR", name: "Jordanien", alt: ["Jordan", "JO"]},
-            {code: "OMN", name: "Oman", alt: ["OM"]},
-            {code: "KOR", name: "Südkorea", alt: ["South Korea", "Korea", "KR"]},
-
-            // Afrika
-            {code: "EGY", name: "Ägypten", alt: ["Egypt", "EG"]},
-            {code: "MAR", name: "Marokko", alt: ["Morocco", "MA"]},
-            {code: "TUN", name: "Tunesien", alt: ["Tunisia", "TN"]},
-            {code: "ZAF", name: "Südafrika", alt: ["South Africa", "ZA"]},
-            {code: "KEN", name: "Kenia", alt: ["Kenya", "KE"]},
-            {code: "NAM", name: "Namibia", alt: ["NA"]},
-            {code: "MUS", name: "Mauritius", alt: ["MU"]},
-            {code: "SYC", name: "Seychellen", alt: ["Seychelles", "SC"]},
-            {code: "TZA", name: "Tansania (Sansibar)", alt: ["Tanzania", "TZ"]},
-
-            // Ozeanien
-            {code: "AUS", name: "Australien", alt: ["Australia", "AU"]},
-            {code: "NZL", name: "Neuseeland", alt: ["New Zealand", "NZ"]},
-            {code: "FJI", name: "Fidschi", alt: ["Fiji", "FJ"]},
-            {code: "PYF", name: "Französisch-Polynesien (Tahiti)", alt: ["French Polynesia", "PF"]}
+            {code:"AFG", name:"Afghanistan", alt:[]}, {code:"EGY", name:"Ägypten", alt:["Egypt"]}, {code:"ALB", name:"Albanien", alt:["Albania"]}, {code:"DZA", name:"Algerien", alt:["Algeria"]}, {code:"AND", name:"Andorra", alt:[], latlng:[42.5, 1.5]}, {code:"AGO", name:"Angola", alt:[]}, {code:"ATG", name:"Antigua und Barbuda", alt:[], latlng:[17.1, -61.8]}, {code:"GNQ", name:"Äquatorialguinea", alt:[]}, {code:"ARG", name:"Argentinien", alt:["Argentina"]}, {code:"ARM", name:"Armenien", alt:[]}, {code:"AZE", name:"Aserbaidschan", alt:[]}, {code:"ETH", name:"Äthiopien", alt:[]}, {code:"AUS", name:"Australien", alt:["Australia"]}, {code:"BHS", name:"Bahamas", alt:[]}, {code:"BHR", name:"Bahrain", alt:[], latlng:[26.0, 50.5]}, {code:"BGD", name:"Bangladesch", alt:["Bangladesh"]}, {code:"BRB", name:"Barbados", alt:[], latlng:[13.2, -59.5]}, {code:"BEL", name:"Belgien", alt:["Belgium"]}, {code:"BLZ", name:"Belize", alt:[]}, {code:"BEN", name:"Benin", alt:[]}, {code:"BTN", name:"Bhutan", alt:[]}, {code:"BOL", name:"Bolivien", alt:[]}, {code:"BIH", name:"Bosnien und Herzegowina", alt:[]}, {code:"BWA", name:"Botswana", alt:[]}, {code:"BRA", name:"Brasilien", alt:["Brazil"]}, {code:"BRN", name:"Brunei", alt:[], latlng:[4.5, 114.7]}, {code:"BGR", name:"Bulgarien", alt:["Bulgaria"]}, {code:"BFA", name:"Burkina Faso", alt:[]}, {code:"BDI", name:"Burundi", alt:[]}, {code:"CHL", name:"Chile", alt:[]}, {code:"CHN", name:"China", alt:[]}, {code:"CRI", name:"Costa Rica", alt:[]}, {code:"DNK", name:"Dänemark", alt:["Denmark"]}, {code:"DEU", name:"Deutschland", alt:["Germany"]}, {code:"DMA", name:"Dominica", alt:[], latlng:[15.4, -61.4]}, {code:"DOM", name:"Dominikanische Republik", alt:["Dom. Republik"]}, {code:"DJI", name:"Dschibuti", alt:[]}, {code:"ECU", name:"Ecuador", alt:[]}, {code:"SLV", name:"El Salvador", alt:[]}, {code:"CIV", name:"Elfenbeinküste", alt:[]}, {code:"ERI", name:"Eritrea", alt:[]}, {code:"EST", name:"Estland", alt:["Estonia"]}, {code:"SWZ", name:"Eswatini", alt:[]}, {code:"FJI", name:"Fidschi", alt:["Fiji"]}, {code:"FIN", name:"Finnland", alt:["Finland"]}, {code:"FRA", name:"Frankreich", alt:["France"]}, {code:"GAB", name:"Gabun", alt:[]}, {code:"GMB", name:"Gambia", alt:[]}, {code:"GEO", name:"Georgien", alt:[]}, {code:"GHA", name:"Ghana", alt:[]}, {code:"GRD", name:"Grenada", alt:[], latlng:[12.1, -61.7]}, {code:"GRC", name:"Griechenland", alt:["Greece"]}, {code:"GTM", name:"Guatemala", alt:[]}, {code:"GIN", name:"Guinea", alt:[]}, {code:"GNB", name:"Guinea-Bissau", alt:[]}, {code:"GUY", name:"Guyana", alt:[]}, {code:"HTI", name:"Haiti", alt:[]}, {code:"HND", name:"Honduras", alt:[]}, {code:"IND", name:"Indien", alt:["India"]}, {code:"IDN", name:"Indonesien", alt:["Indonesia"]}, {code:"IRQ", name:"Irak", alt:[]}, {code:"IRN", name:"Iran", alt:[]}, {code:"IRL", name:"Irland", alt:["Ireland"]}, {code:"ISL", name:"Island", alt:["Iceland"]}, {code:"ISR", name:"Israel", alt:[]}, {code:"ITA", name:"Italien", alt:["Italy"]}, {code:"JAM", name:"Jamaika", alt:["Jamaica"]}, {code:"JPN", name:"Japan", alt:[]}, {code:"YEM", name:"Jemen", alt:[]}, {code:"JOR", name:"Jordanien", alt:["Jordan"]}, {code:"KHM", name:"Kambodscha", alt:[]}, {code:"CMR", name:"Kamerun", alt:[]}, {code:"CAN", name:"Kanada", alt:["Canada"]}, {code:"CPV", name:"Kap Verde", alt:[], latlng:[16.0, -24.0]}, {code:"KAZ", name:"Kasachstan", alt:[]}, {code:"QAT", name:"Katar", alt:[], latlng:[25.3, 51.2]}, {code:"KEN", name:"Kenia", alt:["Kenya"]}, {code:"KGZ", name:"Kirgisistan", alt:[]}, {code:"KIR", name:"Kiribati", alt:[], latlng:[-1.4, 173.0]}, {code:"COL", name:"Kolumbien", alt:["Colombia"]}, {code:"COM", name:"Komoren", alt:[], latlng:[-12.2, 44.4]}, {code:"COG", name:"Kongo (Republik)", alt:[]}, {code:"COD", name:"Kongo (Dem. Rep.)", alt:[]}, {code:"KOR", name:"Südkorea", alt:["Korea"]}, {code:"HRV", name:"Kroatien", alt:["Croatia"]}, {code:"CUB", name:"Kuba", alt:["Cuba"]}, {code:"KWT", name:"Kuwait", alt:[]}, {code:"LAO", name:"Laos", alt:[]}, {code:"LSO", name:"Lesotho", alt:[]}, {code:"LVA", name:"Lettland", alt:[]}, {code:"LBN", name:"Libanon", alt:[], latlng:[33.9, 35.5]}, {code:"LBR", name:"Liberia", alt:[]}, {code:"LBY", name:"Libyen", alt:[]}, {code:"LIE", name:"Liechtenstein", alt:[], latlng:[47.1, 9.5]}, {code:"LTU", name:"Litauen", alt:[]}, {code:"LUX", name:"Luxemburg", alt:[], latlng:[49.6, 6.1]}, {code:"MDG", name:"Madagaskar", alt:[]}, {code:"MWI", name:"Malawi", alt:[]}, {code:"MYS", name:"Malaysia", alt:[]}, {code:"MDV", name:"Malediven", alt:["Maldives"], latlng:[3.2, 73.0]}, {code:"MLI", name:"Mali", alt:[]}, {code:"MLT", name:"Malta", alt:[], latlng:[35.9, 14.4]}, {code:"MAR", name:"Marokko", alt:["Morocco"]}, {code:"MHL", name:"Marshallinseln", alt:[], latlng:[7.1, 171.1]}, {code:"MRT", name:"Mauretanien", alt:[]}, {code:"MUS", name:"Mauritius", alt:[], latlng:[-20.3, 57.5]}, {code:"MEX", name:"Mexiko", alt:["Mexico"]}, {code:"FSM", name:"Mikronesien", alt:[], latlng:[6.9, 158.2]}, {code:"MDA", name:"Moldawien", alt:[]}, {code:"MCO", name:"Monaco", alt:[], latlng:[43.7, 7.4]}, {code:"MNG", name:"Mongolei", alt:[]}, {code:"MNE", name:"Montenegro", alt:[]}, {code:"MOZ", name:"Mosambik", alt:[]}, {code:"MMR", name:"Myanmar", alt:[]}, {code:"NAM", name:"Namibia", alt:[]}, {code:"NRU", name:"Nauru", alt:[], latlng:[-0.5, 166.9]}, {code:"NPL", name:"Nepal", alt:[]}, {code:"NZL", name:"Neuseeland", alt:["New Zealand"]}, {code:"NIC", name:"Nicaragua", alt:[]}, {code:"NLD", name:"Niederlande", alt:["Netherlands"]}, {code:"NER", name:"Niger", alt:[]}, {code:"NGA", name:"Nigeria", alt:[]}, {code:"MKD", name:"Nordmazedonien", alt:[]}, {code:"NOR", name:"Norwegen", alt:["Norway"]}, {code:"OMN", name:"Oman", alt:[]}, {code:"AUT", name:"Österreich", alt:["Austria"]}, {code:"PAK", name:"Pakistan", alt:[]}, {code:"PLW", name:"Palau", alt:[], latlng:[7.5, 134.5]}, {code:"PAN", name:"Panama", alt:[]}, {code:"PNG", name:"Papua-Neuguinea", alt:[]}, {code:"PRY", name:"Paraguay", alt:[]}, {code:"PER", name:"Peru", alt:[]}, {code:"PHL", name:"Philippinen", alt:["Philippines"]}, {code:"POL", name:"Polen", alt:["Poland"]}, {code:"PRT", name:"Portugal", alt:[]}, {code:"RWA", name:"Ruanda", alt:[]}, {code:"ROU", name:"Rumänien", alt:["Romania"]}, {code:"RUS", name:"Russland", alt:[]}, {code:"KNA", name:"St. Kitts und Nevis", alt:[], latlng:[17.3, -62.7]}, {code:"LCA", name:"St. Lucia", alt:[], latlng:[13.9, -60.9]}, {code:"VCT", name:"St. Vincent", alt:[], latlng:[13.2, -61.2]}, {code:"WSM", name:"Samoa", alt:[], latlng:[-13.7, -172.1]}, {code:"SMR", name:"San Marino", alt:[], latlng:[43.9, 12.4]}, {code:"STP", name:"São Tomé und Príncipe", alt:[], latlng:[0.2, 6.6]}, {code:"SAU", name:"Saudi-Arabien", alt:[]}, {code:"SWE", name:"Schweden", alt:["Sweden"]}, {code:"CHE", name:"Schweiz", alt:["Switzerland"]}, {code:"SEN", name:"Senegal", alt:[]}, {code:"SRB", name:"Serbien", alt:[]}, {code:"SYC", name:"Seychellen", alt:["Seychelles"], latlng:[-4.6, 55.4]}, {code:"SLE", name:"Sierra Leone", alt:[]}, {code:"SGP", name:"Singapur", alt:["Singapore"], latlng:[1.35, 103.8]}, {code:"SVK", name:"Slowakei", alt:["Slovakia"]}, {code:"SVN", name:"Slowenien", alt:["Slovenia"]}, {code:"SLB", name:"Salomonen", alt:[]}, {code:"SOM", name:"Somalia", alt:[]}, {code:"ESP", name:"Spanien", alt:["Spain"]}, {code:"LKA", name:"Sri Lanka", alt:[]}, {code:"ZAF", name:"Südafrika", alt:["South Africa"]}, {code:"SDN", name:"Sudan", alt:[]}, {code:"SUR", name:"Suriname", alt:[]}, {code:"SYR", name:"Syrien", alt:[]}, {code:"TJK", name:"Tadschikistan", alt:[]}, {code:"TWN", name:"Taiwan", alt:[]}, {code:"TZA", name:"Tansania", alt:[]}, {code:"THA", name:"Thailand", alt:[]}, {code:"TLS", name:"Osttimor", alt:[]}, {code:"TGO", name:"Togo", alt:[]}, {code:"TON", name:"Tonga", alt:[], latlng:[-21.1, -175.2]}, {code:"TTO", name:"Trinidad und Tobago", alt:[]}, {code:"TCD", name:"Tschad", alt:[]}, {code:"CZE", name:"Tschechien", alt:["Czechia"]}, {code:"TUN", name:"Tunesien", alt:["Tunisia"]}, {code:"TUR", name:"Türkei", alt:["Turkey"]}, {code:"TKM", name:"Turkmenistan", alt:[]}, {code:"TUV", name:"Tuvalu", alt:[], latlng:[-7.8, 178.4]}, {code:"UGA", name:"Uganda", alt:[]}, {code:"UKR", name:"Ukraine", alt:[]}, {code:"HUN", name:"Ungarn", alt:["Hungary"]}, {code:"URY", name:"Uruguay", alt:[]}, {code:"UZB", name:"Usbekistan", alt:[]}, {code:"VUT", name:"Vanuatu", alt:[], latlng:[-15.3, 166.9]}, {code:"VAT", name:"Vatikanstadt", alt:[], latlng:[41.9, 12.45]}, {code:"VEN", name:"Venezuela", alt:[]}, {code:"ARE", name:"Verg. Arab. Emirate", alt:["UAE"]}, {code:"GBR", name:"Vereinigtes Königreich", alt:["Großbritannien", "UK"]}, {code:"USA", name:"USA", alt:["United States"]}, {code:"VNM", name:"Vietnam", alt:[]}, {code:"CAF", name:"Zentralafrikanische Rep.", alt:[]}, {code:"CYP", name:"Zypern", alt:["Cyprus"]}, {code:"ZMB", name:"Sambia", alt:[]}, {code:"ZWE", name:"Simbabwe", alt:[]}
         ].sort((a, b) => a.name.localeCompare(b.name));
 
-        // Dropdown initialisieren
+        // Dropdown befüllen
         const select = document.getElementById('countrySelect');
         countriesList.forEach(c => {
             let option = document.createElement('option');
@@ -288,44 +209,49 @@
             select.appendChild(option);
         });
 
-        // Startdaten aus LocalStorage laden
+        // Strukturierte Datenstruktur mit inkludierten Jahreszahlen
         const defaultData = {
-            family: ["DEU", "FRA", "ITA", "ESP"],
-            noKids: ["USA", "THA", "SGP"],
-            bucket: ["JPN", "CAN", "ISL", "NZL"]
+            family: { "DEU":"", "FRA":"", "ITA":"", "ESP":"" },
+            noKids: { "USA":"2019", "THA":"", "SGP":"" },
+            bucket: { "JPN":"", "CAN":"", "ISL":"", "NZL":"" }
         };
 
-        let travelData = JSON.parse(localStorage.getItem('travelData')) || defaultData;
+        let travelData = JSON.parse(localStorage.getItem('travelData2')) || defaultData;
 
-        // Karte aufsetzen
         const map = L.map('map', {
             zoomSnap: 0.5,
             minZoom: 1.2,
             maxZoom: 5,
             attributionControl: false
-        }).setView([20, 10], 1.5);
+        }).setView([15, 15], 1.5);
 
         let geoJsonLayer;
+        let markerGroup = L.layerGroup().addTo(map); // Gruppe für kleine Inseln/Stadtstaaten
 
-        // Farbabgleich gegen Config-Liste
+        function getCategoryColor(code) {
+            if (code in travelData.family) return "#2ecc71"; // Grün
+            if (code in travelData.noKids) return "#3498db"; // Blau
+            if (code in travelData.bucket) return "#f1c40f"; // Gelb
+            return "#bdc3c7"; // Grau
+        }
+
+        function getYearText(code) {
+            let year = travelData.family[code] || travelData.noKids[code] || travelData.bucket[code] || "";
+            return year ? ` (${year})` : "";
+        }
+
+        // Farbabgleich für große Polygone
         function getCountryColor(feature) {
             const props = feature.properties;
             const id = (props.ISO_A3 || props.id || props.name || "").toUpperCase();
             const nameEng = (props.name || props.NAME || "").toLowerCase();
 
             const foundCountry = countriesList.find(c => {
-                return c.code === id || 
-                       id.includes(c.code) || 
-                       c.alt.some(a => id === a.toUpperCase() || nameEng === a.toLowerCase());
+                return c.code === id || id.includes(c.code) || c.alt.some(a => id === a.toUpperCase() || nameEng === a.toLowerCase());
             });
 
             if (!foundCountry) return "#bdc3c7";
-
-            const code = foundCountry.code;
-            if (travelData.family.includes(code)) return "#2ecc71";
-            if (travelData.noKids.includes(code)) return "#3498db";
-            if (travelData.bucket.includes(code)) return "#f1c40f";
-            return "#bdc3c7";
+            return getCategoryColor(foundCountry.code);
         }
 
         function styleFeature(feature) {
@@ -340,8 +266,35 @@
 
         function onEachFeature(feature, layer) {
             const props = feature.properties;
-            const name = props.name || props.NAME || "Unbekannt";
-            layer.bindPopup(`<b>${name}</b>`);
+            const id = (props.ISO_A3 || props.id || "").toUpperCase();
+            const found = countriesList.find(c => c.code === id || id.includes(c.code));
+            
+            let displayName = props.name || props.NAME || "Unbekannt";
+            if (found) {
+                displayName = found.name + getYearText(found.code);
+            }
+            layer.bindPopup(`<b>${displayName}</b>`);
+        }
+
+        // Zeichnet Kreis-Marker für kleine Länder (z.B. Singapur), damit sie sichtbar werden
+        function updateSmallCountryMarkers() {
+            markerGroup.clearLayers();
+            countriesList.forEach(c => {
+                if (c.latlng) { // Nur für registrierte Kleinstaaten
+                    const color = getCategoryColor(c.code);
+                    if (color !== "#bdc3c7") { // Nur anzeigen wenn farbig gesetzt
+                        const label = c.name + getYearText(c.code);
+                        L.circleMarker(c.latlng, {
+                            radius: 7,
+                            fillColor: color,
+                            color: "#ffffff",
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.9
+                        }).bindPopup(`<b>${label}</b>`).addTo(markerGroup);
+                    }
+                }
+            });
         }
 
         function toggleEditor() {
@@ -350,25 +303,28 @@
 
         function setCountryStatus(category) {
             const selectedCode = document.getElementById('countrySelect').value;
+            const yearValue = document.getElementById('yearInput').value.trim();
 
-            travelData.family = travelData.family.filter(c => c !== selectedCode);
-            travelData.noKids = travelData.noKids.filter(c => c !== selectedCode);
-            travelData.bucket = travelData.bucket.filter(c => c !== selectedCode);
+            // Aus allen Kategorien löschen
+            delete travelData.family[selectedCode];
+            delete travelData.noKids[selectedCode];
+            delete travelData.bucket[selectedCode];
 
+            // In neue Kategorie einsortieren mit Jahr
             if (category !== 'open') {
-                travelData[category].push(selectedCode);
+                travelData[category][selectedCode] = yearValue;
             }
 
-            localStorage.setItem('travelData', JSON.stringify(travelData));
+            localStorage.setItem('travelData2', JSON.stringify(travelData));
 
-            if (geoJsonLayer) {
-                geoJsonLayer.setStyle(styleFeature);
-            }
-
+            // UI & Karte aktualisieren
+            if (geoJsonLayer) geoJsonLayer.setStyle(styleFeature);
+            updateSmallCountryMarkers();
+            
+            document.getElementById('yearInput').value = ""; // Input leeren
             toggleEditor();
         }
 
-        // Stabile GeoJSON Quelle laden
         const geoJsonUrl = 'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json';
 
         fetch(geoJsonUrl)
@@ -378,8 +334,8 @@
                     style: styleFeature,
                     onEachFeature: onEachFeature
                 }).addTo(map);
-            })
-            .catch(err => console.error("Fehler beim Laden:", err));
+                updateSmallCountryMarkers();
+            });
     </script>
 </body>
 </html>
