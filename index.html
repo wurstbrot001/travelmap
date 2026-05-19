@@ -45,7 +45,6 @@
             font-weight: 600;
         }
 
-        /* Button zum Ein-/Ausblenden der Eingabefelder */
         .toggle-btn {
             background: #0071e3;
             color: white;
@@ -83,11 +82,11 @@
         .bg-bucket  { background-color: #f1c40f; border: 1px solid #f39c12; }
         .bg-default { background-color: #bdc3c7; border: 1px solid #95a5a6; }
 
-        /* Eingabebereich (standardmäßig ausgemustert/ausgeblendet für saubere Sicht) */
+        /* Mobil-optimierter Editor-Bereich */
         .editor-box {
             display: none;
             background: #f5f5f7;
-            padding: 10px;
+            padding: 12px;
             border-radius: 8px;
             margin-top: 10px;
             border: 1px solid #d2d2d7;
@@ -98,48 +97,65 @@
         }
 
         .input-group {
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .input-group label {
             display: block;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: 600;
             color: #1d1d1f;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
         }
 
-        .input-group input {
+        /* Nativ aussehendes großes Dropdown für iOS Touch */
+        .input-group select {
             width: 100%;
-            padding: 6px;
-            font-size: 0.85rem;
+            padding: 10px;
+            font-size: 1rem;
             border: 1px solid #d2d2d7;
-            border-radius: 4px;
-            text-transform: uppercase;
+            border-radius: 8px;
+            background-color: white;
+            -webkit-appearance: none;
         }
 
-        .save-btn {
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .action-btn {
+            color: white;
+            border: none;
+            padding: 10px 4px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-family { background-color: #2ecc71; }
+        .btn-couple { background-color: #3498db; }
+        .btn-bucket { background-color: #f1c40f; color: #1d1d1f; }
+        
+        .reset-btn {
             width: 100%;
-            background: #34c759;
+            background: #e74c3c;
             color: white;
             border: none;
             padding: 8px;
             border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 600;
+            font-size: 0.8rem;
+            font-weight: 500;
         }
 
         #map {
             flex-grow: 1;
             width: 100%;
             height: 100%;
-            background: #cbdbe3; /* Ozean-Farbe während des Ladens */
-        }
-
-        .leaflet-popup-content {
-            font-size: 0.9rem;
-            font-weight: 500;
-            margin: 8px;
+            background: #cbdbe3;
         }
     </style>
 </head>
@@ -148,30 +164,28 @@
     <header>
         <div class="header-top">
             <h1>🌍 Reise-Dashboard</h1>
-            <button class="toggle-btn" onclick="toggleEditor()">Bearbeiten</button>
+            <button class="toggle-btn" onclick="toggleEditor()">Land eintragen</button>
         </div>
         
         <div class="legend-container">
-            <div class="legend-item"><div class="color-badge bg-family"></div>Als Familie</div>
-            <div class="legend-item"><div class="color-badge bg-couple"></div>Ohne Kinder</div>
-            <div class="legend-item"><div class="color-badge bg-bucket"></div>Bucketlist</div>
+            <div class="legend-item"><div class="color-badge bg-family"></div>Als Familie (Grün)</div>
+            <div class="legend-item"><div class="color-badge bg-couple"></div>Ohne Kinder (Blau)</div>
+            <div class="legend-item"><div class="color-badge bg-bucket"></div>Bucketlist (Gelb)</div>
             <div class="legend-item"><div class="color-badge bg-default"></div>Offen (Grau)</div>
         </div>
 
         <div id="editorBox" class="editor-box">
             <div class="input-group">
-                <label>Als Familie (ISO-Codes kommagetrennt, z.B. DEU, FRA):</label>
-                <input type="text" id="inputFamily">
+                <label for="countrySelect">Land auswählen:</label>
+                <select id="countrySelect">
+                    </select>
             </div>
-            <div class="input-group">
-                <label>Ohne Kinder (z.B. USA, THA):</label>
-                <input type="text" id="inputNoKids">
+            <div class="btn-grid">
+                <button class="action-btn btn-family" onclick="setCountryStatus('family')">Familie</button>
+                <button class="action-btn btn-couple" onclick="setCountryStatus('noKids')">Ohne Kinder</button>
+                <button class="action-btn btn-bucket" onclick="setCountryStatus('bucket')">Bucketlist</button>
             </div>
-            <div class="input-group">
-                <label>Bucketlist (z.B. JPN, CAN):</label>
-                <input type="text" id="inputBucket">
-            </div>
-            <button class="save-btn" onclick="saveData()">Karte aktualisieren</button>
+            <button class="reset-btn" onclick="setCountryStatus('open')">Auf "Offen (Grau)" zurücksetzen</button>
         </div>
     </header>
 
@@ -180,20 +194,40 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // Standard-Länderdaten falls noch nichts im Speicher des iPhones liegt
+        // Eine Liste der gängigsten Reiseländer für das Dropdown-Menü
+        const countriesList = [
+            {code: "DEU", name: "Deutschland"}, {code: "AUT", name: "Österreich"}, {code: "CHE", name: "Schweiz"},
+            {code: "FRA", name: "Frankreich"}, {code: "ITA", name: "Italien"}, {code: "ESP", name: "Spanien"},
+            {code: "PRT", name: "Portugal"}, {code: "GRC", name: "Griechenland"}, {code: "HRV", name: "Kroatien"},
+            {code: "NLD", name: "Niederlande"}, {code: "BEL", name: "Belgien"}, {code: "GBR", name: "Großbritannien"},
+            {code: "DNK", name: "Dänemark"}, {code: "SWE", name: "Schweden"}, {code: "NOR", name: "Norwegen"},
+            {code: "FIN", name: "Finnland"}, {code: "ISL", name: "Island"}, {code: "TUR", name: "Türkei"},
+            {code: "EGY", name: "Ägypten"}, {code: "TUN", name: "Tunesien"}, {code: "ZAF", name: "Südafrika"},
+            {code: "USA", name: "USA"}, {code: "CAN", name: "Kanada"}, {code: "MEX", name: "Mexiko"},
+            {code: "DOM", name: "Dom. Republik"}, {code: "CUB", name: "Kuba"}, {code: "BRA", name: "Brasilien"},
+            {code: "ARG", name: "Argentinien"}, {code: "THA", name: "Thailand"}, {code: "SGP", name: "Singapur"},
+            {code: "JPN", name: "Japan"}, {code: "CHN", name: "China"}, {code: "IND", name: "Indien"},
+            {code: "IDN", name: "Indonesien"}, {code: "VNM", name: "Vietnam"}, {code: "MDV", name: "Malediven"},
+            {code: "AUS", name: "Australien"}, {code: "NZL", name: "Neuseeland"}
+        ].sort((a, b) => a.name.localeCompare(b.name)); // Alphabetisch sortieren
+
+        // Dropdown befüllen
+        const select = document.getElementById('countrySelect');
+        countriesList.forEach(c => {
+            let option = document.createElement('option');
+            option.value = c.code;
+            option.textContent = c.name;
+            select.appendChild(option);
+        });
+
+        // Startdaten definieren
         const defaultData = {
             family: ["DEU", "FRA", "ITA", "ESP"],
             noKids: ["USA", "THA", "SGP"],
             bucket: ["JPN", "CAN", "ISL", "NZL"]
         };
 
-        // Lade Daten aus dem Speicher (LocalStorage) oder nutze Standardwerte
         let travelData = JSON.parse(localStorage.getItem('travelData')) || defaultData;
-
-        // Eingabefelder beim Start befüllen
-        document.getElementById('inputFamily').value = travelData.family.join(', ');
-        document.getElementById('inputNoKids').value = travelData.noKids.join(', ');
-        document.getElementById('inputBucket').value = travelData.bucket.join(', ');
 
         // Karte initialisieren
         const map = L.map('map', {
@@ -201,92 +235,83 @@
             minZoom: 1.2,
             maxZoom: 5,
             attributionControl: false
-        }).setView([15, 5], 1.5);
+        }).setView([25, 10], 1.5);
 
         let geoJsonLayer;
 
         function getCountryColor(isoCode) {
-            if (travelData.family.includes(isoCode)) return "#2ecc71";
-            if (travelData.noKids.includes(isoCode)) return "#3498db";
-            if (travelData.bucket.includes(isoCode)) return "#f1c40f";
+            if (!isoCode) return "#bdc3c7";
+            const cleanCode = isoCode.toUpperCase();
+            if (travelData.family.includes(cleanCode)) return "#2ecc71";
+            if (travelData.noKids.includes(cleanCode)) return "#3498db";
+            if (travelData.bucket.includes(cleanCode)) return "#f1c40f";
             return "#bdc3c7";
         }
 
         function styleFeature(feature) {
-            // Manche GeoJSONs nutzen ISO_A3, manche BRK_A3. Wir prüfen beides.
-            const isoCode = feature.properties.ISO_A3 || feature.properties.BRK_A3 || feature.properties.iso_a3;
+            // Robustes Auslesen des ISO-Codes (fängt alle gängigen GeoJSON-Formate ab)
+            const props = feature.properties;
+            const isoCode = props.ISO_A3 || props.ADM0_A3 || props.iso_a3 || props.iso3 || props.id;
+            
             return {
                 fillColor: getCountryColor(isoCode),
                 weight: 1,
                 opacity: 1,
                 color: '#ffffff',
-                fillOpacity: 0.75
+                fillOpacity: 0.7
             };
         }
 
         function onEachFeature(feature, layer) {
-            // Fallback für Ländernamen (Deutsch oder Englisch)
-            const countryName = feature.properties.NAME_DE || feature.properties.name_de || feature.properties.NAME || feature.properties.name;
-            if (countryName) {
-                layer.bindPopup(countryName);
-            }
+            const props = feature.properties;
+            const countryName = props.NAME_DE || props.name_de || props.NAME || props.name || "Unbekanntes Land";
+            layer.bindPopup(countryName);
         }
 
-        // Editor ein- und ausblenden
         function toggleEditor() {
-            const box = document.getElementById('editorBox');
-            box.classList.toggle('active');
+            document.getElementById('editorBox').classList.toggle('active');
         }
 
-        // Daten aus den Feldern auslesen, säubern, speichern und Karte neu zeichnen
-        function saveData() {
-            function parseInput(id) {
-                return document.getElementById(id).value
-                    .toUpperCase()
-                    .split(',')
-                    .map(item => item.trim())
-                    .filter(item => item.length === 3); // Nur gültige 3-stellige Codes
+        // Status ändern via Dropdown
+        function setCountryStatus(category) {
+            const selectedCode = document.getElementById('countrySelect').value;
+
+            // Zuerst alten Status überall entfernen
+            travelData.family = travelData.family.filter(c => c !== selectedCode);
+            travelData.noKids = travelData.noKids.filter(c => c !== selectedCode);
+            travelData.bucket = travelData.bucket.filter(c => c !== selectedCode);
+
+            // In neue Kategorie einsortieren (außer bei 'open')
+            if (category !== 'open') {
+                travelData[category].push(selectedCode);
             }
 
-            travelData.family = parseInput('inputFamily');
-            travelData.noKids = parseInput('inputNoKids');
-            travelData.bucket = parseInput('inputBucket');
-
-            // permanent auf dem iPhone sichern
+            // Auf dem iPhone speichern
             localStorage.setItem('travelData', JSON.stringify(travelData));
 
-            // Karte live aktualisieren
+            // Karte live neu färben
             if (geoJsonLayer) {
                 geoJsonLayer.setStyle(styleFeature);
             }
-            
-            toggleEditor(); // Box wieder einklappen
+
+            toggleEditor();
         }
 
-        // Laden der Weltkarte mit Ausfallsicherheit (CORS/HTTPS-Safe CDN URL)
-        const primaryUrl = 'https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson';
-        const fallbackUrl = 'https://r2.shared.town/countries.geojson'; // Sekundärer Spiegel falls GitHub zickt
+        // Absolut stabile und CORS-geprüfte GeoJSON Quelle laden
+        const geoJsonUrl = 'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json';
 
-        function loadMap(url) {
-            fetch(url)
-                .then(res => {
-                    if (!res.ok) throw new Error('Netzwerk-Fehler beim Laden der Karte');
-                    return res.json();
-                })
-                .then(geoData => {
-                    geoJsonLayer = L.geoJSON(geoData, {
-                        style: styleFeature,
-                        onEachFeature: onEachFeature
-                    }).addTo(map);
-                })
-                .catch(err => {
-                    console.warn("Versuche Fallback-URL wegen:", err.message);
-                    if (url !== fallbackUrl) loadMap(fallbackUrl);
-                });
-        }
-
-        // Starten
-        loadMap(primaryUrl);
+        fetch(geoJsonUrl)
+            .then(res => {
+                if (!res.ok) throw new Error();
+                return res.json();
+            })
+            .then(geoData => {
+                geoJsonLayer = L.geoJSON(geoData, {
+                    style: styleFeature,
+                    onEachFeature: onEachFeature
+                }).addTo(map);
+            })
+            .catch(err => console.error("Kartenfehler:", err));
     </script>
 </body>
 </html>
